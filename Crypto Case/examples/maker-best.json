@@ -1,0 +1,92 @@
+{
+    "cmds": {
+	"run-day": "ccc_sim_trader maker-best.json 20200501",
+	"run-all": "gen_dates.py -sd 20200501 -ed 20200630 | parallel -j 64 ccc_sim_trader maker-best.json",
+	"analyze-all": "sim_ana.py -sd 20200501 -ed 20200630 -p logs"
+    },
+    "instance": {
+        "license_id":"TRAIL001",
+        "license_key":"apifiny123456",
+    	"log_path": "logs",        
+        "name": "test_strat"
+    },
+    "sim": {
+        "delay_o2a_us": 30000,
+        "delay_a2m_us": 0
+    },
+    "risk_formulas": [
+        ["Standard_Risk", ["RiskFormula", {"components": [[["FXRLIEN", "TOUCOIN"], 1.0]]}]]
+    ],
+    "accounts": [
+        [101, ["Account", {"risk_formulas": ["Standard_Risk"], "id": 10001}]]
+    ],    
+    "fees": {
+        "TOUCOIN": {
+            "make": 0.0002,
+            "take": 0.0004
+        }
+    },    
+    "symbol_info": {
+	"FXRLIEN.TOUCOIN": {"base_coin": "LIEN", "coin": "FXR", "local_name": "FXR/LIEN", "lotsize": 1e-08, "min_order_size": 1e-08, "multiple": 1.0, "qty_precision": 8.0, "ticksize": 0.001}
+    }, 
+    "symbols": [
+        {"cid": 1001, "port": ["FXRLIEN", "TOUCOIN"]}
+    ],
+    "players": [
+	["SpotPlayer", ["CSV10Player", {"port": ["FXRLIEN", "TOUCOIN"], "path": "/data/toucoin/fxrlien"}]]
+    ],
+    "variables": [
+        ["FXRLIEN.TOUCOIN_sEMA90min", ["Trend", {"pm": "FXRLIEN.TOUCOIN_midpx", "sampler": "Ts90smin"}]],
+        ["FXRLIEN.TOUCOIN_sEMA4hour", ["Trend", {"pm": "FXRLIEN.TOUCOIN_midpx", "sampler": "Ts4hour"}]],
+        ["FXRLIEN.TOUCOIN_sEMA30min", ["Trend", {"pm": "FXRLIEN.TOUCOIN_midpx", "sampler": "Ts30min"}]],
+        ["FXRLIEN.TOUCOIN_sEMA90min", ["Trend", {"pm": "FXRLIEN.TOUCOIN_midpx", "sampler": "Ts90min"}]],
+        ["FXRLIEN.TOUCOIN_eEMA4hour", ["VarEma", {"variable": "FXRLIEN.TOUCOIN_sEMA4hour", "sampler": "Ts4hour"}]],
+        ["FXRLIEN.TOUCOIN_ssEMA4hour", ["Scale", {"coef": 2, "variable": "FXRLIEN.TOUCOIN_sEMA4hour"}]],
+        ["FXRLIEN.TOUCOIN_dEMA4hour", ["Sub", {"v1": "FXRLIEN.TOUCOIN_ssEMA4hour", "v2": "FXRLIEN.TOUCOIN_eEMA4hour"}]],
+        ["FXRLIEN.TOUCOIN_eEMA30min", ["VarEma", {"variable": "FXRLIEN.TOUCOIN_sEMA30min", "sampler": "Ts30min"}]],
+        ["FXRLIEN.TOUCOIN_ssEMA30min", ["Scale", {"coef": 2, "variable": "FXRLIEN.TOUCOIN_sEMA30min"}]],
+        ["FXRLIEN.TOUCOIN_dEMA30min", ["Sub", {"v1": "FXRLIEN.TOUCOIN_ssEMA30min", "v2": "FXRLIEN.TOUCOIN_eEMA30min"}]],
+        ["FXRLIEN.TOUCOIN_eEMA90min", ["VarEma", {"variable": "FXRLIEN.TOUCOIN_sEMA90min", "sampler": "Ts90min"}]],
+        ["FXRLIEN.TOUCOIN_ssEMA90min", ["Scale", {"coef": 2, "variable": "FXRLIEN.TOUCOIN_sEMA90min"}]],
+        ["FXRLIEN.TOUCOIN_dEMA90min", ["Sub", {"v1": "FXRLIEN.TOUCOIN_ssEMA90min", "v2": "FXRLIEN.TOUCOIN_eEMA90min"}]],
+        ["midprice", ["PriceVar", {"pm": "FXRLIEN.TOUCOIN_midpx"}]],
+        ["FXRLIEN.TOUCOIN_signal", ["Sub", {"v1": "FXRLIEN.TOUCOIN_dEMA30min","v2": "FXRLIEN.TOUCOIN_dEMA4hour"}]]
+    ],
+    "samplers":[
+        ["Ts5min", ["TimeSampler", {"msecs": 1000, "halflife": 300}]],
+        ["Ts15min", ["TimeSampler", {"msecs": 1000, "halflife": 900}]], 
+        ["Ts30min", ["TimeSampler", {"msecs": 1000, "halflife": 1800}]],
+        ["Ts60min", ["TimeSampler", {"msecs": 1000, "halflife": 3600}]], 
+        ["Ts90min", ["TimeSampler", {"msecs": 1000, "halflife": 5600}]],
+        ["Ts120min", ["TimeSampler", {"msecs": 1000, "halflife": 7200}]],
+        ["Ts4hour", ["TimeSampler", {"msecs": 1000, "halflife": 14400}]], 
+        ["Ts8hour", ["TimeSampler", {"msecs": 1000, "halflife": 28800}]], 
+        ["Ts5hour", ["TimeSampler", {"msecs": 1000, "halflife": 18000}]], 
+        ["Ts4day", ["TimeSampler", {"msecs": 1000, "halflife": 345600}]], 
+        ["Ts20hour", ["TimeSampler", {"msecs": 1000, "halflife": 72000}]]
+    ],
+    "pricing_models":[
+        ["FXRLIEN.TOUCOIN_midpx", ["MidPx", {"port": ["FXRLIEN", "TOUCOIN"]}]],
+        ["FXRLIEN.TOUCOIN_twap4hour", ["Twap", {"port": ["FXRLIEN", "TOUCOIN"], "sampler": "Ts4hour"}]],
+        ["FXRLIEN.TOUCOIN_twap30min", ["Twap", {"port": ["FXRLIEN", "TOUCOIN"], "sampler": "Ts30min"}]],
+        ["FXRLIEN.TOUCOIN_twap90min", ["Twap", {"port": ["FXRLIEN", "TOUCOIN"], "sampler": "Ts90min"}]]
+    ],
+    "models":[
+	["FXRLIEN.TOUCOIN_model", ["LinearModel", {"variable": "FXRLIEN.TOUCOIN_dEMA90min"}]]
+    ],
+    "strategies": [                                 
+        ["FXRLIEN.TOUCOIN", [
+            "CCSimpleMakerStrategy", {
+                "symbol": "FXRLIEN",
+                "trade_market": "TOUCOIN",
+		"make_mid_pm": "FXRLIEN.TOUCOIN_midpx",
+		"account": 101,
+		"model": "FXRLIEN.TOUCOIN_model",
+		"use_bps_thold": true,
+		"make_thold": 3,
+		"order_notional": 100
+            }
+	]
+	]                          
+    ]
+}
